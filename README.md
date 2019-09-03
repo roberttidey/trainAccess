@@ -20,6 +20,12 @@ Construction details will appear at instructables shortly
 ## Library details
 - Uses standard libraries plus TFT_eSPI for fast display control
 - TFT_eSPI can be loaded from Arduino library manager
+- Modify following in User_Setup.h in TFT_esp library to reflect actual pin usage
+
+#define TFT_CS   PIN_D8  // Chip select control pin D8
+#define TFT_DC   PIN_D2  // Data Command control pin
+#define TFT_RST  PIN_D4  // Reset pin (could connect to NodeMCU RST, see next line)
+
 
 ## Set up
 - Modify ssid and 3 password fields to suit personal needs
