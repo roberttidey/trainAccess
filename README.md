@@ -49,9 +49,9 @@ Construction details will appear at instructables shortly
 - If there are more listings than the display size then the top and bottom buttons will page through the screens.
 
 ## Links
-Instructables TBA
+Instructables https://www.instructables.com/id/UK-Train-Display/
 
-Thingiverse Enclosure TBA
+Thingiverse Enclosure https://www.thingiverse.com/thing:3843509
 
 National Rail registration https://www.nationalrail.co.uk/100296.aspx
 
