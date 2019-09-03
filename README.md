@@ -10,7 +10,7 @@ Construction details will appear at instructables shortly
 - Battery powered (rechargeable LIPO) with inbuilt charger
 - Very low quiescent current (< 20uA) for long battery life
 - 320 x 240 LCD display with 3 control buttons
-- Normally the module sleeps between watering times but can be turned into a non sleep mode for checking and configuration
+- Normally the module sleeps after a time but can be turned into a non sleep mode for checking and configuration
 - Configuration data in a file to allow set up of major parameters
 - Web based file access to update config file
 - Software can be updated via web interface
