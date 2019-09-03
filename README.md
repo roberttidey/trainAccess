@@ -29,7 +29,7 @@ Construction details will appear at instructables shortly
 
 ## Set up
 - Modify ssid and 3 password fields to suit personal needs
-- Compile with Arduino IDE
+- Compile with Arduino IDE. Memory should be set to 2MB firmware / 2MB Spiffs to allow OTA updates
 - Serial upload
 - Use the WifiManager AP to select and set up wifi connection
 - Register with National Rail and get access token for OpenLDBWS (see link below)
