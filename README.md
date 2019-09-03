@@ -9,7 +9,7 @@ Construction details will appear at instructables shortly
 - ESP8266 based processing, hooks onto local wifi network
 - Battery powered (rechargeable LIPO) with inbuilt charger
 - Very low quiescent current (< 20uA) for long battery life
-- 320 x 240 LCD display
+- 320 x 240 LCD display with 3 control buttons
 - Normally the module sleeps between watering times but can be turned into a non sleep mode for checking and configuration
 - Configuration data in a file to allow set up of major parameters
 - Web based file access to update config file
@@ -35,6 +35,12 @@ Construction details will appear at instructables shortly
 - Ipload the files in data folder using http:ip/upload
 - Further file access can use http:ip/edit
 - For software updating export a binary and then access http:/ip/firmware
+
+## Usage
+- Middle button is used to turn unit on. It will automatically get current times and refresh at the specified interval
+- It will sleep automatically after the configured time if enabled
+- Sleep may be manually forced by a long press of the middle button
+- If there are more listings than the display size then the top and bottom buttons will page through the screens.
 
 ## Links
 Instructables TBA
