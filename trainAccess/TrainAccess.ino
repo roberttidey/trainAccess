@@ -123,13 +123,6 @@ float battery_mult = 1220.0/220.0/1024;//resistor divider, vref, max count
 float battery_volts;
 
 #define MAX_ROWS 40
-String trainsAccessToken = "";
-String trainsURL = "";
-String trainsStationQuery = "";
-String trainsFingerprint = "";
-String trainsStation = "";
-String trainsDestinations = "";
-String trainsRows = "5";
 #define S_STD 0
 #define S_ETD 1
 #define S_PLATFORM 2
@@ -137,10 +130,22 @@ String trainsRows = "5";
 #define S_DESTINATION 4
 #define S_HEIGHT 5
 #define S_MAX 6
+#define STATIONS_MAX 4
+String trainsAccessToken = "";
+String trainsURL = "";
+String trainsStationQuery = "";
+String trainsFingerprint = "";
+String trainsStationsString = "";
+String trainsDestinationsString = "";
+String trainsStations[STATIONS_MAX] = {"","","",""};
+String trainsDestinations[STATIONS_MAX] = {"","","",""};
+String trainsRows = "5";
 String services[MAX_ROWS][S_MAX];
+int stationIndex = 0;
 int serviceCount;
 int oldServiceCount;
 int servicesChanged;
+int servicesRefresh = 1;
 int serviceOffset = 0;
 int displayRows = 11;
 String colWidthsHtString = "44,66,20,100,100,20";
@@ -405,18 +410,45 @@ void handleSpiffsFormat() {
 	server.send(200, "text/json", "format complete");
 }
 
-void initWidths(String widths, int wType) {
-	int j,k;
-	String temp = widths + ",0,0,0,0,0,0";
-	j=0;
-	for(k=0; k < S_MAX; k++) {
-		j = temp.indexOf(',');
-		if(wType == 0) {
-			colWidths[k] = temp.substring(0,j).toInt();
-		} else {
-			fieldWidths[k] = temp.substring(0,j).toInt();
+void parseCSV(String csv, int fMax, int fType) {
+	int i,j,k;
+	i=0;
+	k = 0;
+	while(k < fMax) {
+		j = csv.indexOf(',', i);
+		if(j<0) j = 255;
+		switch(fType) {
+			case 0: 
+				colWidths[k] = csv.substring(i,j).toInt();
+				break;
+			case 1:
+				fieldWidths[k] = csv.substring(i,j).toInt();
+				break;
+			case 2:
+				trainsStations[k] = csv.substring(i,j);
+				break;
+			case 3:
+				trainsDestinations[k] = csv.substring(i,j);
+				break;
 		}
-		temp = temp.substring(j+1);
+		k++;
+		if(j == 255) break;
+		i = j + 1;
+	}
+	//Fill up any unspecified array elements
+	switch(fType) {
+		case 0: 
+			for(i = k; i < fMax; i++) colWidths[k] = 20;
+			break;
+		case 1:
+			for(i = k; i < fMax; i++) fieldWidths[k] = 8;
+			break;
+		case 2:
+			for(i = k; i < fMax; i++) trainsStations[i] = trainsStations[i-1];
+			break;
+		case 3:
+			for(i = k; i < fMax; i++) trainsDestinations[i] = trainsDestinations[i-1];
+			break;
 	}
 }
 
@@ -438,8 +470,8 @@ void getConfig() {
 					case 2: trainsURL = line;break;
 					case 3: trainsStationQuery = line;break;
 					case 4: trainsFingerprint = line;break;
-					case 5: trainsStation = line;break;
-					case 6: trainsDestinations = line;break;
+					case 5: trainsStationsString = line;break;
+					case 6: trainsDestinationsString = line;break;
 					case 7: trainsRows = line;break;
 					case 8: sleepMode = line.toInt();break;
 					case 9: updateInterval = line.toInt();break;
@@ -466,8 +498,8 @@ void getConfig() {
 		Serial.print(F("trainsURL:"));Serial.println(trainsURL);
 		Serial.print(F("trainsStationQuery:"));Serial.println(trainsStationQuery);
 		Serial.print(F("trainsFingerprint:"));Serial.println(trainsFingerprint);
-		Serial.print(F("trainsStation:"));Serial.println(trainsStation);
-		Serial.print(F("trainsDestinations:"));Serial.println(trainsDestinations);
+		Serial.print(F("trainsStationsString:"));Serial.println(trainsStationsString);
+		Serial.print(F("trainsDestinationsString:"));Serial.println(trainsDestinationsString);
 		Serial.print(F("trainsRows:"));Serial.println(trainsRows);
 		Serial.print(F("sleepMode:"));Serial.println(sleepMode);
 		Serial.print(F("updateInterval:"));Serial.println(updateInterval);
@@ -480,8 +512,10 @@ void getConfig() {
 	} else {
 		Serial.println(String(CONFIG_FILE) + " not found");
 	}
-	initWidths(colWidthsHtString,0);
-	initWidths(fieldWidthsString,1);
+	parseCSV(colWidthsHtString, S_MAX, 0);
+	parseCSV(fieldWidthsString, S_MAX, 1);
+	parseCSV(trainsStationsString, STATIONS_MAX, 2);
+	parseCSV(trainsDestinationsString, STATIONS_MAX, 3);
 }
 
 /*
@@ -631,8 +665,8 @@ void queryTrainsDB(String msg) {
 
 String makeQuery(String query) {
 	query.replace("%t", trainsAccessToken);
-	query.replace("%s", trainsStation);
-	query.replace("%d", trainsDestinations);
+	query.replace("%s", trainsStations[stationIndex]);
+	query.replace("%d", trainsDestinations[stationIndex]);
 	query.replace("%r", trainsRows);
 	return query;
 }
@@ -665,7 +699,7 @@ void initDisplay() {
 	}
 	y += colWidths[S_HEIGHT];
 	for(i=0; i < displayRows; i++) {
-		tft.fillRect(0, y, TFT_HEIGHT - 1, y + colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
+		tft.fillRect(0, y, TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
 		y+= colWidths[S_HEIGHT];
 	}
 	tft.setTextColor(TFT_WHITE, TFT_RED);
@@ -681,18 +715,19 @@ void displayServices(int start) {
 		Serial.println("display Services" + String(serviceCount) + " from " + String(start));
 		y = colWidths[S_HEIGHT];
 		for(i=0; i < displayRows; i++) {
-			//Serial.println(services[i + start][0]);
-			tft.fillRect(0, y, TFT_HEIGHT - 1, y + colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
+			tft.fillRect(0, y, TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
 			if((i + start) < serviceCount) {
 				tft.setTextColor(TFT_WHITE, (i & 1)? TFT_BLUE : TFT_RED);
 				x = 0;
 				x1 = 0;
-				for(j = 0; j< S_MAX; j++) {
+				for(j = 0; j < S_MAX; j++) {
 					x1 = x + colWidths[j] / 2;
 					x+= colWidths[j];
 					tft.drawCentreString(services[i + start][j],x1,y,2);
+					//Serial.print(services[i + start][j] + ",");
 				}
 			}
+			//Serial.println();
 			y+= colWidths[S_HEIGHT];
 		}
 		x = 0;
@@ -729,31 +764,50 @@ int checkButtons() {
 /*
 	action button events
 */
-void processButtons() {
+int processButtons() {
+	int changed = 0;
 	if(pinChanges[KEY1] == 2) {
 		//Long press
+		stationIndex++;
+		if(stationIndex >= STATIONS_MAX) stationIndex = 0;
+		changed = 1;
 		pinChanges[KEY1] = 0;
 	} else if (pinChanges[KEY1] == 1) {
 		//Short press
 		serviceOffset -= displayRows;
 		if(serviceOffset < 0) serviceOffset = 0;
+		changed = 1;
+		servicesChanged = 1;
+		servicesRefresh = 0;
 		pinChanges[KEY1] = 0;
 	} else if (pinChanges[KEY2] == 2) {
 		//Long press
 		sleepForce = 1;
+		changed = 1;
+		servicesRefresh = 0;
 		pinChanges[KEY2] = 0;
 	} else if (pinChanges[KEY2] == 1) {
 		//Short press
 		pinChanges[KEY2] = 0;
 	} else if (pinChanges[KEY3] == 2) {
 		//Long press
+		tft.fillRect(0, colWidths[S_HEIGHT], TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1, TFT_RED);
+		tft.drawString("Battery:" + String(battery_volts) + " ip:" + WiFi.localIP().toString(),0,colWidths[S_HEIGHT],2);
+		changed = 1;
+		servicesRefresh = 0;
+		//prevent overwrite of display
+		servicesChanged = 0;
 		pinChanges[KEY3] = 0;
 	} else if (pinChanges[KEY3] == 1) {
 		//Short press
 		serviceOffset += displayRows;
 		if(serviceOffset > (serviceCount - displayRows)) serviceOffset = serviceCount - displayRows;
+		changed = 1;
+		servicesChanged = 1;
+		servicesRefresh = 0;
 		pinChanges[KEY3] = 0;
 	}
+	return changed;
 }
 
 /*
@@ -824,7 +878,8 @@ void setup() {
 void loop() {
 	int i;
 	battery_volts = battery_mult * ADC_CAL * analogRead(A0);
-	getStationBoard();
+	if(servicesRefresh) getStationBoard();
+	servicesRefresh = 1;
 	displayServices(serviceOffset);
 	if((sleepMode == SLEEP_MODE_DEEP) && (millis() > (lastChangeTime  + noChangeTimeout)) || sleepForce) {
 		WiFi.mode(WIFI_OFF);
@@ -838,9 +893,11 @@ void loop() {
 		server.handleClient();
 		wifiConnect(1);
 		delaymSec(timeInterval);
-		if(checkButtons()) {
-			processButtons();
-		}
 		elapsedTime++;
+		if(checkButtons()) {
+			if(processButtons()) {
+				break;
+			}
+		}
 	}
 }

@@ -22,9 +22,9 @@ Construction details will appear at instructables shortly
 - TFT_eSPI can be loaded from Arduino library manager
 - Modify following in User_Setup.h in TFT_esp library to reflect actual pin usage
 
-#define TFT_CS   PIN_D8  // Chip select control pin D8
-#define TFT_DC   PIN_D2  // Data Command control pin
-#define TFT_RST  PIN_D4  // Reset pin (could connect to NodeMCU RST, see next line)
+- #define TFT_CS   PIN_D8  // Chip select control pin D8
+- #define TFT_DC   PIN_D2  // Data Command control pin
+- #define TFT_RST  PIN_D4  // Reset pin (could connect to NodeMCU RST, see next line)
 
 
 ## Set up
@@ -41,12 +41,14 @@ Construction details will appear at instructables shortly
 - Ipload the files in data folder using http:ip/upload
 - Further file access can use http:ip/edit
 - For software updating export a binary and then access http:/ip/firmware
+- Note tha thte site fingerprint for https access may change if the security certificate of the National rail site is renewed. This can be seen in a browser and used to update the config file.
 
 ## Usage
 - Middle button is used to turn unit on. It will automatically get current times and refresh at the specified interval
 - It will sleep automatically after the configured time if enabled
 - Sleep may be manually forced by a long press of the middle button
-- If there are more listings than the display size then the top and bottom buttons will page through the screens.
+- If there are more listings than the display size then a short press of the top and bottom buttons will page up and down through the screens.
+- Multiple station and destination codes (up to 4) may be put in the config file (comma separated). A long press of the top bottom will cycle through these combinations.
 
 ## Links
 Instructables https://www.instructables.com/id/UK-Train-Display/
