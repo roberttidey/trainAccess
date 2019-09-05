@@ -89,7 +89,7 @@ time_t currentTime;
 String host = "esp8266-trains";
 const char* update_path = "/firmware";
 const char* update_username = "admin";
-const char* update_password = "password";
+const char* update_password = "password;
 
 //AP definitions
 #define AP_SSID "ssid"
@@ -683,10 +683,11 @@ void getStationBoard() {
 	}
 }
 
-void initDisplay() {
+void initDisplay(int first) {
 	int i, j;
 	int x, x1;
 	int y;
+	String hdr;
 	tft.fillRect(0, 0, TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1, TFT_GREEN);
 	tft.setTextColor(TFT_BLACK, TFT_GREEN);
 	x = 0;
@@ -695,15 +696,20 @@ void initDisplay() {
 	for(i = 0; i < S_MAX; i++) {
 		x1 = x + colWidths[i] / 2;
 		x+= colWidths[i];
-		tft.drawCentreString(colHdrs[i], x1,y,2);
+		hdr = colHdrs[i];
+		if(i == 3) hdr+= " - " + trainsStations[stationIndex];
+		if(i == 4) hdr+= " - " + trainsDestinations[stationIndex];
+		tft.drawCentreString(hdr, x1,y,2);
 	}
-	y += colWidths[S_HEIGHT];
-	for(i=0; i < displayRows; i++) {
-		tft.fillRect(0, y, TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
-		y+= colWidths[S_HEIGHT];
+	if(first) {
+		y += colWidths[S_HEIGHT];
+		for(i=0; i < displayRows; i++) {
+			tft.fillRect(0, y, TFT_HEIGHT - 1, colWidths[S_HEIGHT] - 1,  (i & 1)? TFT_BLUE : TFT_RED);
+			y+= colWidths[S_HEIGHT];
+		}
+		tft.setTextColor(TFT_WHITE, TFT_RED);
+		tft.drawCentreString("Wait", colWidths[0] / 2, colWidths[S_HEIGHT],2);
 	}
-	tft.setTextColor(TFT_WHITE, TFT_RED);
-	tft.drawCentreString("Wait", colWidths[0] / 2, colWidths[S_HEIGHT],2);
 }
 
 void displayServices(int start) {
@@ -770,6 +776,7 @@ int processButtons() {
 		//Long press
 		stationIndex++;
 		if(stationIndex >= STATIONS_MAX) stationIndex = 0;
+		initDisplay(0);
 		changed = 1;
 		pinChanges[KEY1] = 0;
 	} else if (pinChanges[KEY1] == 1) {
@@ -783,7 +790,7 @@ int processButtons() {
 	} else if (pinChanges[KEY2] == 2) {
 		//Long press
 		sleepForce = 1;
-		changed = 1;
+		changed = 2;
 		servicesRefresh = 0;
 		pinChanges[KEY2] = 0;
 	} else if (pinChanges[KEY2] == 1) {
@@ -828,7 +835,7 @@ void setup() {
 	getConfig();
 	tft.init();
 	tft.setRotation(rotation);
-	initDisplay();
+	initDisplay(1);
 	for(i=0; i<3;i++) {
 		pinMode(pinInputs[i], INPUT_PULLUP);
 		pinStates[i] = 1;
@@ -876,7 +883,7 @@ void setup() {
   Main loop to read temperature and publish as required
 */
 void loop() {
-	int i;
+	int i,c;
 	battery_volts = battery_mult * ADC_CAL * analogRead(A0);
 	if(servicesRefresh) getStationBoard();
 	servicesRefresh = 1;
@@ -895,7 +902,11 @@ void loop() {
 		delaymSec(timeInterval);
 		elapsedTime++;
 		if(checkButtons()) {
-			if(processButtons()) {
+			c = processButtons();
+			if(c) {
+				if(c == 1) {
+					lastChangeTime = millis();
+				}
 				break;
 			}
 		}
