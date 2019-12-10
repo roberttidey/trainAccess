@@ -41,7 +41,7 @@ Construction details will appear at instructables shortly
 - Ipload the files in data folder using http:ip/upload
 - Further file access can use http:ip/edit
 - For software updating export a binary and then access http:/ip/firmware
-- Note tha thte site fingerprint for https access may change if the security certificate of the National rail site is renewed. This can be seen in a browser and used to update the config file.
+- Note tha thte site fingerprint for https access may change if the security certificate of the National rail site is renewed. This can be seen in a browser and used to update the config file. You can also leave this line blank to skip the certificate check.
 
 ## Usage
 - Middle button is used to turn unit on. It will automatically get current times and refresh at the specified interval

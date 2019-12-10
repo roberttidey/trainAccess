@@ -623,7 +623,11 @@ void queryTrainsDB(String msg) {
 	if(msg.length()) {
 		Serial.print("[HTTPS] begin...\r\n");
 		std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
-		client->setFingerprint(trainsFingerprint.c_str());
+		if(trainsFingerprint.length() > 40) {
+			client->setFingerprint(trainsFingerprint.c_str());
+		} else {
+			client->setInsecure();
+		}
 		http.begin(*client, trainsURL);
 		http.addHeader("Content-Type", "text/xml");
 		int httpCode = http.POST(msg);
